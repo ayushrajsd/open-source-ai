@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Fix broken link in README",
+    "url": "https://github.com/example/repo/issues/1",
+    "repo": "example/repo",
+    "description": "The README file contains a link that is outdated and needs to be updated.",
+    "tags": ["documentation", "good first issue"],
+    "stars": 120
+  },
+  {
+    "title": "Add unit tests for Login component",
+    "url": "https://github.com/example/repo/issues/2",
+    "repo": "example/repo",
+    "description": "Create unit tests for the Login component to ensure better coverage.",
+    "tags": ["tests", "help wanted"],
+    "stars": 200
+  },
+  {
+    "title": "Implement dark mode toggle",
+    "url": "https://github.com/example/repo/issues/3",
+    "repo": "example/repo",
+    "description": "Add a dark mode toggle to the settings page for better user experience.",
+    "tags": ["feature", "good first issue"],
+    "stars": 300
+  }
+]
