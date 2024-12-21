@@ -4,6 +4,8 @@ import Header from "./components/Header";
 import Dashboard from "./pages/Dashboard";
 import Explore from "./pages/Explore";
 import Preferences from "./components/Preferences";
+import Login from "./pages/Login";
+import MainPage from "./pages/MainPage";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -15,11 +17,13 @@ function App() {
 
   return (
     <div className={darkMode ? "dark" : ""}>
-      <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      {/* <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} /> */}
       <main>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          {/* <Route path="/" element={<Login />} /> */}
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/" element={<MainPage />} />
         </Routes>
       </main>
     </div>

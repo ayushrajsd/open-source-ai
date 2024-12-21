@@ -1,38 +1,41 @@
 import React, { useState, useEffect } from "react";
 import { Select, Button, message } from "antd";
+import { getPreferences, savePreferences } from "../api/preferences";
 
 const { Option } = Select;
 
-function Preferences({ onSave }) {
+function Preferences() {
   const [preferredLanguages, setPreferredLanguages] = useState([]);
   const [preferredCategories, setPreferredCategories] = useState([]);
 
   useEffect(() => {
-    // Load preferences from localStorage
-    const savedLanguages =
-      JSON.parse(localStorage.getItem("preferredLanguages")) || [];
-    const savedCategories =
-      JSON.parse(localStorage.getItem("preferredCategories")) || [];
-    setPreferredLanguages(savedLanguages);
-    setPreferredCategories(savedCategories);
+    // Fetch preferences from the backend when the component mounts
+    const fetchPreferences = async () => {
+      try {
+        const { data } = await getPreferences();
+        setPreferredLanguages(data.languages || []);
+        setPreferredCategories(data.categories || []);
+      } catch (error) {
+        message.error("Failed to load preferences. Please try again.");
+      }
+    };
+
+    fetchPreferences();
   }, []);
 
-  const handleSavePreferences = () => {
-    // Save preferences to localStorage
-    localStorage.setItem(
-      "preferredLanguages",
-      JSON.stringify(preferredLanguages)
-    );
-    localStorage.setItem(
-      "preferredCategories",
-      JSON.stringify(preferredCategories)
-    );
+  const handleSavePreferences = async () => {
+    const preferences = {
+      languages: preferredLanguages,
+      categories: preferredCategories,
+    };
 
-    // Callback to inform Dashboard of changes
-    if (onSave) {
-      onSave(preferredLanguages, preferredCategories);
+    try {
+      // Save preferences to the backend
+      await savePreferences(preferences);
+      message.success("Preferences updated successfully!");
+    } catch (error) {
+      message.error("Failed to save preferences. Please try again.");
     }
-    message.success("Preferences updated successfully!");
   };
 
   return (
@@ -48,7 +51,8 @@ function Preferences({ onSave }) {
           </label>
           <Select
             mode="multiple"
-            placeholder="Select programming languages"
+            placeholder="Choose languages you love to work with"
+            loading={!preferredLanguages.length}
             value={preferredLanguages}
             onChange={(values) => setPreferredLanguages(values)}
             className="w-full"
@@ -83,7 +87,13 @@ function Preferences({ onSave }) {
           </Select>
         </div>
 
-        <Button type="primary" onClick={handleSavePreferences} className="mt-4">
+        {/* Save Button */}
+        <Button
+          type="primary"
+          onClick={handleSavePreferences}
+          className="mt-4"
+          loading={false} // Add a loading state if required
+        >
           Save Preferences
         </Button>
       </div>

@@ -5,10 +5,12 @@ import { useContext } from "react";
 import SavedIssuesContext from "../context/SavedIssuesContext";
 import IssueCard from "../components/IssueCard";
 import Preferences from "../components/Preferences";
+import { fetchProfile } from "../api/user";
 
 function Dashboard() {
   // const [savedIssues, setSavedIssues] = useState([]);
   const { savedIssues, addIssue, removeIssue } = useContext(SavedIssuesContext); // Access context
+  const [profile, setProfile] = useState(null);
 
   const [contributions, setContributions] = useState(() => {
     const savedContributions = JSON.parse(
@@ -61,6 +63,18 @@ function Dashboard() {
   //   // Persist the changes in localStorage
   //   localStorage.setItem("savedIssues", JSON.stringify(updatedIssues));
   // };
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const data = await fetchProfile();
+        setProfile(data);
+      } catch (error) {
+        console.error("Failed to load profile");
+      }
+    };
+
+    loadProfile();
+  }, []);
   const handlePreferencesSave = (languages, categories) => {
     console.log("Updated Preferences:", languages, categories);
     // Re-fetch or filter data based on new preferences
@@ -71,6 +85,35 @@ function Dashboard() {
       <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-8">
         Dashboard
       </h1>
+      {/* GitHub Profile Section */}
+      {profile && (
+        <div className="flex items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow mb-8">
+          <img
+            src={profile.avatar}
+            alt="GitHub Avatar"
+            className="w-20 h-20 rounded-full mr-4"
+          />
+          <div>
+            <h2 className="text-2xl font-semibold text-blue-500">
+              {profile.name}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Username: {profile.username}
+            </p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Public Repos: {profile.repos}
+            </p>
+            <a
+              href={profile.profileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              View GitHub Profile
+            </a>
+          </div>
+        </div>
+      )}
       <Preferences onSave={handlePreferencesSave} />
 
       {/* Explore Issues Section */}
