@@ -3,62 +3,85 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import SkeletonLoader from "../components/SkeletonLoader";
 import ScrollToTopButton from "../components/ScrollToTopButton";
 import SavedIssuesContext from "../context/SavedIssuesContext";
-import axiosInstance from "../api/index";
-import dayjs from "dayjs";
-import { getPreferences } from "../api/preferences";
+import IssueCard from "../components/IssueCard";
+import { getPreferences } from "../api/preferences"; // Import API for fetching preferences
+import axiosInstance from "../api/index"; // API instance for backend requests
 
 function Explore() {
-  const { savedIssues, addIssue, removeIssue } = useContext(SavedIssuesContext); // Access context
+  const { savedIssues, addIssue, removeIssue } = useContext(SavedIssuesContext);
 
-  const [issues, setIssues] = useState([]); // Store fetched issues
-  const [hasMore, setHasMore] = useState(true); // Control if more data can be loaded
-  const [filter, setFilter] = useState(""); // State for filtering by tags
-  const [search, setSearch] = useState(""); // State for search bar
+  const [issues, setIssues] = useState([]); // Initially no issues loaded
+  const [hasMore, setHasMore] = useState(true); // For infinite scrolling (future-proofing)
+  const [difficulty, setDifficulty] = useState(""); // For difficulty filters
+  const [currentPage, setCurrentPage] = useState(1); // For pagination
 
+  // Fetch and cache preferences
   const fetchAndCachePreferences = async () => {
     try {
-      const preferences = await getPreferences();
+      const { data } = await getPreferences();
       localStorage.setItem(
         "preferredLanguages",
-        JSON.stringify(preferences.preferredLanguages || [])
+        JSON.stringify(data.languages || [])
       );
       localStorage.setItem(
         "preferredCategories",
-        JSON.stringify(preferences.preferredCategories || [])
+        JSON.stringify(data.categories || [])
       );
-      return preferences;
+      return data;
     } catch (error) {
       console.error("Failed to fetch preferences:", error.message);
       throw error;
     }
   };
 
+  // Fetch Issues from the backend
   const fetchIssues = async () => {
     try {
       const preferences = await fetchAndCachePreferences();
-      const { preferredLanguages, preferredCategories } = preferences;
-
+      const { languages, categories } = preferences || {};
       const response = await axiosInstance.get(
-        `/issues?preferredLanguages=${preferredLanguages?.join(
-          ","
-        )}&preferredCategories=${preferredCategories?.join(",")}`
+        `/issues?preferredLanguages=${
+          languages?.join(",") || ""
+        }&preferredCategories=${
+          categories?.join(",") || ""
+        }&difficulty=${difficulty}&page=${currentPage}&limit=10`
       );
 
       setIssues(response.data);
+      setCurrentPage(1); // Reset to the first page
     } catch (error) {
       console.error("Failed to load issues:", error.message);
     }
   };
 
-  useEffect(() => {
-    fetchIssues(); // Fetch issues on component mount
-  }, []);
+  const fetchMoreIssues = async () => {
+    if (!hasMore) return; // Do not fetch if no more data to load
 
-  const filteredIssues = issues.filter(
-    (issue) =>
-      (!filter || issue.labels.some((label) => label.includes(filter))) &&
-      (!search || issue.title.toLowerCase().includes(search.toLowerCase()))
-  );
+    try {
+      const preferences = JSON.parse(localStorage.getItem("preferences")) || {};
+      const response = await axiosInstance.get(
+        `/issues?preferredLanguages=${
+          preferences.languages?.join(",") || ""
+        }&preferredCategories=${
+          preferences.categories?.join(",") || ""
+        }&difficulty=${difficulty}&page=${currentPage + 1}&limit=10`
+      );
+
+      if (response.data.length === 0) {
+        setHasMore(false); // No more data to load
+      } else {
+        setIssues((prevIssues) => [...prevIssues, ...response.data]); // Append new data
+        setCurrentPage((prevPage) => prevPage + 1); // Increment page
+      }
+    } catch (error) {
+      console.error("Failed to fetch more issues:", error.message);
+    }
+  };
+
+  // UseEffect to fetch issues on component mount
+  useEffect(() => {
+    fetchIssues();
+  }, [difficulty]);
 
   return (
     <div className="p-6 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 min-h-screen">
@@ -66,36 +89,29 @@ function Explore() {
         Explore Issues
       </h1>
 
-      {/* Filter and Search */}
-      <div className="flex flex-wrap gap-4 mb-8">
-        <input
-          type="text"
-          placeholder="Search issues..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 p-2 border rounded-md dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
-        />
-
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="p-2 border rounded-md dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
-        >
-          <option value="">All Labels</option>
-          {Array.from(new Set(issues.flatMap((issue) => issue.labels))).map(
-            (label) => (
-              <option key={label} value={label}>
-                {label}
-              </option>
-            )
-          )}
-        </select>
+      {/* Difficulty Filters */}
+      <div className="mb-4 flex justify-between">
+        <div className="flex items-center">
+          <label className="text-gray-700 dark:text-gray-300 mr-4">
+            Filter by Difficulty:
+          </label>
+          <select
+            className="p-2 border border-gray-300 rounded dark:bg-gray-800 dark:text-gray-200"
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Challenging">Challenging</option>
+          </select>
+        </div>
       </div>
 
-      {/* Issues List */}
       <InfiniteScroll
-        dataLength={filteredIssues.length}
+        dataLength={issues.length}
         hasMore={hasMore}
+        next={fetchMoreIssues}
         loader={<SkeletonLoader count={2} />}
         endMessage={
           <p className="text-center mt-4 text-gray-600 dark:text-gray-400">
@@ -104,44 +120,14 @@ function Explore() {
         }
       >
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredIssues.map((issue) => (
-            <li
+          {issues.map((issue) => (
+            <IssueCard
               key={issue.id}
-              className="p-4 bg-gray-100 rounded-lg shadow hover:shadow-lg transition duration-300 dark:bg-gray-800"
-            >
-              <a
-                href={issue.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 font-semibold text-lg hover:underline"
-              >
-                {issue.title}
-              </a>
-              <p className="text-sm text-gray-500">
-                Repository: {issue.repository}
-              </p>
-              <p className="text-sm text-gray-500">
-                Created: {dayjs(issue.created_at).format("MMM D, YYYY")}
-              </p>
-              <p className="text-sm text-gray-500">
-                Labels:{" "}
-                {issue.labels.length > 0
-                  ? issue.labels.join(", ")
-                  : "No tags available"}
-              </p>
-              <button
-                onClick={() =>
-                  savedIssues.some((saved) => saved.id === issue.id)
-                    ? removeIssue(issue.id)
-                    : addIssue(issue)
-                }
-                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                {savedIssues.some((saved) => saved.id === issue.id)
-                  ? "Remove Issue"
-                  : "Save Issue"}
-              </button>
-            </li>
+              issue={issue}
+              onSave={() => addIssue(issue)}
+              onRemove={() => removeIssue(issue.id)}
+              isSaved={savedIssues.some((saved) => saved.id === issue.id)}
+            />
           ))}
         </ul>
       </InfiniteScroll>

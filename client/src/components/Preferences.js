@@ -24,14 +24,12 @@ function Preferences() {
   }, []);
 
   const handleSavePreferences = async () => {
-    const preferences = {
-      languages: preferredLanguages,
-      categories: preferredCategories,
-    };
-
     try {
-      // Save preferences to the backend
-      await savePreferences(preferences);
+      // Flatten the payload to match backend expectations
+      const response = await savePreferences(
+        preferredLanguages,
+        preferredCategories
+      );
       message.success("Preferences updated successfully!");
     } catch (error) {
       message.error("Failed to save preferences. Please try again.");

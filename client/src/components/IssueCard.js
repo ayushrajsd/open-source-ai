@@ -1,52 +1,65 @@
 import React from "react";
+import { Card, Tag, Button } from "antd";
 
-function IssueCard({ issue, onSave, onRemove, isSaved }) {
+function IssueCard({ issue, onSave, isSaved }) {
+  const {
+    title,
+    repository,
+    created_at,
+    labels,
+    stars,
+    forks,
+    summary,
+    difficulty, // Difficulty level
+  } = issue;
+
+  // Map difficulty to color
+  const difficultyColors = {
+    Easy: "green",
+    Medium: "gold",
+    Challenging: "red",
+  };
+
   return (
-    <li className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-lg transition">
-      <h3 className="text-lg font-medium text-blue-500 dark:text-blue-400">
-        <a href={issue.url} target="_blank" rel="noopener noreferrer">
-          {issue.title}
-        </a>
+    <Card className="w-full max-w-2xl mx-auto mb-4 shadow-sm hover:shadow-md transition-shadow">
+      <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400">
+        {title}
       </h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {issue.description}
-      </p>
-      <div className="mt-2 flex space-x-2">
-        {/* Ensure tags exist before mapping */}
-        {issue.tags && issue.tags.length > 0 ? (
-          issue.tags.map((tag, index) => (
-            <span
-              key={index}
-              className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full dark:bg-blue-700 dark:text-blue-200"
-            >
-              {tag}
-            </span>
-          ))
-        ) : (
-          <span className="text-gray-500 dark:text-gray-400">
-            No tags available
-          </span>
-        )}
+      <div className="grid grid-cols-2 gap-4 text-sm mt-2">
+        <div>
+          <span className="font-semibold">Repository:</span> {repository}
+        </div>
+        <div>
+          <span className="font-semibold">Created:</span>{" "}
+          {new Date(created_at).toLocaleDateString()}
+        </div>
+        <div>
+          <span className="font-semibold">Labels:</span>{" "}
+          {labels?.length ? labels.join(", ") : "No labels available"}
+        </div>
+        <div>
+          <span className="font-semibold">Stars:</span> {stars}
+        </div>
+        <div>
+          <span className="font-semibold">Forks:</span> {forks}
+        </div>
+        <div>
+          <span className="font-semibold">Difficulty:</span>{" "}
+          <Tag color={difficultyColors[difficulty]}>{difficulty}</Tag>
+        </div>
       </div>
-      <div className="mt-4">
-        {/* Save or Unsave Button */}
-        {isSaved ? (
-          <button
-            onClick={onRemove}
-            className="inline-block bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md shadow transition"
-          >
-            Remove
-          </button>
-        ) : (
-          <button
-            onClick={onSave}
-            className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow transition"
-          >
-            Save Issue
-          </button>
-        )}
+      <div className="text-sm mt-4">
+        <span className="font-semibold">Summary:</span> {summary || "N/A"}
       </div>
-    </li>
+      <Button
+        type="primary"
+        onClick={onSave}
+        className="mt-4 w-full"
+        style={{ backgroundColor: isSaved ? "#52c41a" : "#1890ff" }}
+      >
+        {isSaved ? "Saved" : "Save Issue"}
+      </Button>
+    </Card>
   );
 }
 

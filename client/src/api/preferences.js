@@ -4,15 +4,16 @@ import axiosInstance from "./index";
 export const savePreferences = async (languages, categories) => {
   try {
     const response = await axiosInstance.post("/preferences", {
-      preferredLanguages: languages || [],
-      preferredCategories: categories || [],
+      preferredLanguages: languages, // Send as a flat array
+      preferredCategories: categories, // Send as a flat array
     });
-    console.log(response.data);
+    return response.data;
   } catch (error) {
     console.error(
       "Error saving preferences:",
       error.response?.data || error.message
     );
+    throw error;
   }
 };
 

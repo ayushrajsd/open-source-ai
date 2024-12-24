@@ -4,7 +4,7 @@ const { body, validationResult } = require("express-validator");
 // Save User Preferences
 exports.savePreferences = async (req, res) => {
   try {
-    const { languages, categories } = req.body;
+    const { preferredLanguages, preferredCategories } = req.body;
     const userId = req.user.id; // Extract user ID from JWT payload
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -12,10 +12,10 @@ exports.savePreferences = async (req, res) => {
     }
     const preferences = await UserPreference.findOneAndUpdate(
       { userId },
-      { languages, categories },
+      { languages: preferredLanguages, categories: preferredCategories },
       { new: true, upsert: true } // Update or insert if not found
     );
-
+    console.log("updated prefrerences", preferences);
     res.status(200).json({ success: true, data: preferences });
   } catch (error) {
     console.error("Error saving preferences:", error);
