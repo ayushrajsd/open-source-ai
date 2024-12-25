@@ -11,11 +11,24 @@ const openai = new OpenAI({
  * @returns {Array} - Ranked issues
  */
 const rankIssues = (issues) => {
-  return issues
-    .sort(
-      (a, b) => b.stars + b.forks - (a.stars + a.forks) // Rank by stars and forks
-    )
-    .slice(0, 10); // Return top 10 issues
+  const recentThreshold = new Date();
+  recentThreshold.setFullYear(recentThreshold.getFullYear() - 1);
+
+  // Filter by stars and recency
+  let filteredIssues = issues.filter(
+    (issue) => issue.stars > 5 && new Date(issue.created_at) > recentThreshold
+  );
+
+  // If filtered issues are fewer than 10, include less popular ones
+  if (filteredIssues.length < 10) {
+    const additionalIssues = issues.filter(
+      (issue) => !filteredIssues.includes(issue)
+    );
+    filteredIssues = [...filteredIssues, ...additionalIssues].slice(0, 10);
+  }
+
+  // Rank by stars and forks
+  return filteredIssues.sort((a, b) => b.stars + b.forks - (a.stars + a.forks));
 };
 
 /**
@@ -106,23 +119,22 @@ const generateSummary = async (title, body) => {
         {
           role: "system",
           content:
-            "You are an AI that generates concise summaries for GitHub issues aimed at beginner developers.",
+            "You are an assistant summarizing GitHub issues. Provide a clear and concise summary, including the problem and a suggested resolution. Keep it actionable and easy to understand for developers.",
         },
         {
           role: "user",
-          content: `Summarize the following GitHub issue:\n\nTitle: ${title}\n\nBody: ${body}`,
+          content: `Title: ${title}\n\nDescription: ${body}`,
         },
       ],
-      max_tokens: 50,
-      temperature: 0.7,
+      max_tokens: 200,
+      temperature: 0.3,
     });
 
-    return (
-      aiResponse.choices[0]?.message?.content?.trim() || "Summary unavailable"
-    );
+    const summary = aiResponse.choices[0]?.message?.content?.trim();
+    return summary || "Summary generation failed.";
   } catch (error) {
     console.error("Error generating summary:", error.message);
-    return "Summary unavailable";
+    return "Summary unavailable.";
   }
 };
 

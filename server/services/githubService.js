@@ -27,16 +27,28 @@ const fetchIssuesFromGitHub = async ({
     query += ` label:${preferredCategories}`;
   }
 
+  // Adjust filters for broader results on later pages
+  if (page > 3) {
+    query += ` stars:>50 forks:>10`; // Broader criteria for stars and forks
+  } else {
+    query += ` stars:>100 forks:>20`; // Stricter criteria for stars and forks
+  }
+
+  // Add sorting by stars
+  const url = `${GITHUB_API_BASE_URL}/search/issues?q=${encodeURIComponent(
+    query
+  )}&sort=stars&order=desc&page=${page}&per_page=${limit}`;
+
   console.log("GitHub access token:", accessToken);
 
   try {
     const response = await axios.get(
       `${GITHUB_API_BASE_URL}/search/issues?q=${encodeURIComponent(
         query
-      )}&page=${page}&per_page=${limit}`,
+      )}&sort=stars&order=desc&page=${page}&per_page=${limit}`,
       {
         headers: {
-          Authorization: `token ${accessToken}`, // Ensure the token is set
+          Authorization: `token ${accessToken}`,
         },
       }
     );
