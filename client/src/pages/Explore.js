@@ -12,7 +12,7 @@ function Explore() {
 
   const [issues, setIssues] = useState([]); // Initially no issues loaded
   const [hasMore, setHasMore] = useState(true); // For infinite scrolling (future-proofing)
-  const [difficulty, setDifficulty] = useState(""); // For difficulty filters
+  const [difficulty, setDifficulty] = useState("Easy"); // For difficulty filters
   const [currentPage, setCurrentPage] = useState(1); // For pagination
 
   // Fetch and cache preferences
@@ -37,14 +37,17 @@ function Explore() {
   // Fetch Issues from the backend
   const fetchIssues = async () => {
     try {
+      console.log("Fetching issues with difficulty:", difficulty); // Debugging log
       const preferences = await fetchAndCachePreferences();
       const { languages, categories } = preferences || {};
+      const difficultyFilter = difficulty === "All" ? "" : difficulty;
+
       const response = await axiosInstance.get(
         `/issues?preferredLanguages=${
           languages?.join(",") || ""
         }&preferredCategories=${
           categories?.join(",") || ""
-        }&difficulty=${difficulty}&page=${currentPage}&limit=10`
+        }&difficulty=${difficultyFilter}&page=${currentPage}&limit=10`
       );
 
       setIssues(response.data);
@@ -101,7 +104,8 @@ function Explore() {
             onChange={(e) => setDifficulty(e.target.value)}
           >
             <option value="">All</option>
-            <option value="Easy">Easy</option>
+            <option value="Easy">Good First Issues</option>{" "}
+            {/* Change label to be user-friendly */}
             <option value="Medium">Medium</option>
             <option value="Challenging">Challenging</option>
           </select>

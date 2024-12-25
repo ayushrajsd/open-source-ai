@@ -12,6 +12,9 @@ const authenticateUser = (req, res, next) => {
     req.user = decoded; // Attach user info to the request
     next();
   } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Unauthorized: Token expired" });
+    }
     return res.status(401).json({ message: "Unauthorized: Invalid token" });
   }
 };

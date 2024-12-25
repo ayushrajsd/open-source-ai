@@ -18,6 +18,7 @@ const savedIssuesRoutes = require("./routes/savedIssues");
 const profileRoutes = require("./routes/profile");
 const issuesRoutes = require("./routes/issues");
 const errorHandler = require("./middleware/errorHandler");
+const authRoutes = require("./routes/auth");
 
 // Load environment variables
 
@@ -47,7 +48,7 @@ app.use(
       collectionName: "sessions",
     }),
     cookie: {
-      maxAge: 3600000, // 1 hour
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       secure: process.env.NODE_ENV === "production",
     },
   })
@@ -77,6 +78,7 @@ app.use("/api/preferences", preferencesRoutes);
 app.use("/api/saved-issues", savedIssuesRoutes);
 app.use("/api", profileRoutes);
 app.use("/api/issues", issuesRoutes);
+app.use("/api/auth", authRoutes);
 
 // Rate Limiting
 const limiter = rateLimit({
