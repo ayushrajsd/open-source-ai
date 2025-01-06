@@ -99,7 +99,34 @@ const fetchRepositoryDetails = async (repositoryUrl, accessToken) => {
   }
 };
 
+const fetchIssueDetails = async (repositoryUrl, issueNumber, accessToken) => {
+  try {
+    // Construct the API URL for fetching issue details
+    const url = `${repositoryUrl}/issues/${issueNumber}`;
+    console.log("constructed url is", url);
+
+    // Make the API request
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `token ${accessToken}`, // Ensure the token is included
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      console.error("Unauthorized access: Check your GitHub token.");
+    } else if (error.response?.status === 404) {
+      console.error(`Issue not found for ID ${issueNumber}.`);
+    } else {
+      console.error("Error fetching issue details:", error.message);
+    }
+    throw new Error("Failed to fetch issue details");
+  }
+};
+
 module.exports = {
   fetchIssuesFromGitHub,
   fetchRepositoryDetails,
+  fetchIssueDetails,
 };

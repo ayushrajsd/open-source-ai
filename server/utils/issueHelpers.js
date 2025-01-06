@@ -114,7 +114,7 @@ const classifyDifficulty = async (title, body, labels = []) => {
 const generateSummary = async (title, body) => {
   try {
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo", // Switch to 3.5 for cost-efficiency
       messages: [
         {
           role: "system",
@@ -137,9 +137,35 @@ const generateSummary = async (title, body) => {
     return "Summary unavailable.";
   }
 };
+const generateDebuggingTips = async (title, body) => {
+  try {
+    const aiResponse = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an assistant helping developers debug GitHub issues. Provide clear debugging tips for the following issue.",
+        },
+        {
+          role: "user",
+          content: `Title: ${title}\n\nDescription: ${body}`,
+        },
+      ],
+      max_tokens: 200,
+      temperature: 0.5,
+    });
+
+    return aiResponse.choices[0]?.message?.content || "No tips available.";
+  } catch (error) {
+    console.error("Error generating debugging tips:", error.message);
+    throw new Error("Failed to generate debugging tips");
+  }
+};
 
 module.exports = {
   rankIssues,
   classifyDifficulty,
   generateSummary,
+  generateDebuggingTips,
 };

@@ -6,6 +6,7 @@ import Explore from "./pages/Explore";
 import Preferences from "./components/Preferences";
 import Login from "./pages/Login";
 import MainPage from "./pages/MainPage";
+import IssueDetail from "./components/IssueDetail";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -24,6 +25,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/" element={<MainPage />} />
+          <Route path="/issues/:issueNumber" element={<IssueDetail />} />
         </Routes>
       </main>
     </div>
