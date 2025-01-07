@@ -1,4 +1,6 @@
 const express = require("express");
+const langdetect = require("langdetect");
+
 const authenticateUser = require("../middleware/authMiddleware");
 const {
   fetchIssuesFromGitHub,
@@ -23,6 +25,8 @@ const router = express.Router();
  * @returns {Array} - Processed issues with additional metadata.
  */
 const processIssues = async (issues, accessToken) => {
+  // console.log("Raw Issues from GitHub API:", issues);
+
   return await Promise.all(
     issues.map(async (issue) => {
       const {
@@ -35,6 +39,28 @@ const processIssues = async (issues, accessToken) => {
         repository_url,
         created_at,
       } = issue;
+
+      const content = `${title} ${body || ""}`.trim();
+
+      // Detect language
+      let detectedLanguage = "en"; // Default to English
+      try {
+        const detection = langdetect.detectOne(content);
+        detectedLanguage = detection?.lang || "en"; // Use detected language or fallback to English
+        console.log(`Detected language for "${title}": ${detectedLanguage}`);
+      } catch (error) {
+        console.warn(
+          `Language detection failed for "${title}". Defaulting to English.`
+        );
+      }
+
+      // Skip non-English issues
+      if (detectedLanguage !== "en") {
+        console.log(
+          `Skipping non-English issue: "${title}" (Detected: ${detectedLanguage})`
+        );
+        return null;
+      }
 
       let difficultyLevel = "Medium";
       let summary = "Summary unavailable";
@@ -80,7 +106,7 @@ const processIssues = async (issues, accessToken) => {
         }
       }
 
-      return {
+      const processedIssue = {
         id,
         number,
         title,
@@ -93,6 +119,9 @@ const processIssues = async (issues, accessToken) => {
         summary,
         difficulty: difficultyLevel,
       };
+
+      // console.log("Processed Issue:", processedIssue);
+      return processedIssue;
     })
   );
 };
@@ -127,9 +156,13 @@ router.get("/", authenticateUser, async (req, res) => {
 
     // Process issues: add difficulty, repo details, and summaries
     const processedIssues = await processIssues(issues, accessToken);
+    const rankedIssues = rankIssues(
+      processedIssues.filter((issue) => issue !== null)
+    );
+    // console.log("Final Response to Client:", rankedIssues);
 
     // Rank and return issues
-    res.json(rankIssues(processedIssues.filter((issue) => issue !== null)));
+    res.json(rankedIssues);
   } catch (error) {
     console.error("Error processing issues:", error.message);
     res.status(500).json({ message: "Failed to process issues." });

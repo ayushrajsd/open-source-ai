@@ -5,81 +5,67 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// In-memory caches
+const summaryCache = new Map(); // Cache for summaries
+const difficultyCache = new Map(); // Cache for difficulty classifications
+
 /**
  * Helper function to rank issues based on activity
  * @param {Array} issues - List of issues
  * @returns {Array} - Ranked issues
  */
 const rankIssues = (issues) => {
-  const recentThreshold = new Date();
-  recentThreshold.setFullYear(recentThreshold.getFullYear() - 1);
+  console.log("Raw issues count:", issues.length);
 
-  // Filter by stars and recency
+  // Relax thresholds to ensure more issues pass through
   let filteredIssues = issues.filter(
-    (issue) => issue.stars > 5 && new Date(issue.created_at) > recentThreshold
+    (issue) =>
+      issue.stars >= 3 && // Lowered minimum stars
+      issue.forks >= 0 // Allow repositories with no forks
   );
 
-  // If filtered issues are fewer than 10, include less popular ones
-  if (filteredIssues.length < 10) {
+  console.log("Filtered issues count:", filteredIssues.length);
+
+  // Fallback: Ensure at least 5 issues are returned
+  if (filteredIssues.length < 5) {
     const additionalIssues = issues.filter(
-      (issue) => !filteredIssues.includes(issue)
+      (issue) => !filteredIssues.includes(issue) && issue.stars >= 1
     );
-    filteredIssues = [...filteredIssues, ...additionalIssues].slice(0, 10);
+    filteredIssues = [...filteredIssues, ...additionalIssues].slice(0, 5); // Ensure a minimum of 5 issues
   }
 
-  // Rank by stars and forks
-  return filteredIssues.sort((a, b) => b.stars + b.forks - (a.stars + a.forks));
+  console.log("Ranked issues count:", filteredIssues.length);
+
+  return filteredIssues;
 };
 
 /**
  * Helper function to classify issue difficulty using OpenAI
  * @param {String} title - Issue title
  * @param {String} body - Issue body
+ * @param {Array} labels - Issue labels
  * @returns {String} - Difficulty level (Easy, Medium, Challenging)
  */
-// const classifyDifficulty = async (title, body) => {
-//   try {
-//     const aiResponse = await openai.chat.completions.create({
-//       model: "gpt-3.5-turbo", // Use gpt-4 if available
-//       messages: [
-//         {
-//           role: "system",
-//           content:
-//             "You are an assistant classifying GitHub issues into Easy, Medium, or Challenging.",
-//         },
-//         {
-//           role: "user",
-//           content: `Classify the following GitHub issue into Easy, Medium, or Challenging. Only respond with one word:\n\nTitle: ${title}\n\nBody: ${
-//             body || "No description provided."
-//           }`,
-//         },
-//       ],
-//       max_tokens: 10,
-//       temperature: 0.0,
-//     });
-
-//     const difficulty = aiResponse.choices[0]?.message?.content?.trim();
-
-//     // Validate the response
-//     if (["Easy", "Medium", "Challenging"].includes(difficulty)) {
-//       return difficulty;
-//     } else {
-//       console.warn(`Unexpected difficulty response: ${difficulty}`);
-//       return "Medium"; // Default to Medium if the response is unexpected
-//     }
-//   } catch (error) {
-//     console.error("Error classifying issue difficulty:", error.message);
-//     return "Medium"; // Default to Medium on error
-//   }
-// };
 const classifyDifficulty = async (title, body, labels = []) => {
+  const cacheKey = `difficulty_${title}_${body}`;
+  if (difficultyCache.has(cacheKey)) {
+    return difficultyCache.get(cacheKey); // Return cached difficulty
+  }
+
   try {
-    // Ensure labels are processed correctly
     const labelNames = labels.map((label) => label.name?.toLowerCase() || "");
 
-    // Prioritize "Good First Issue" label
+    // Debugging log
+    console.log("Classifying difficulty for issue:", { title, labels });
+
+    // Prioritize labels
     if (labelNames.includes("good first issue")) {
+      difficultyCache.set(cacheKey, "Easy");
       return "Easy";
+    }
+    if (labelNames.includes("help wanted")) {
+      difficultyCache.set(cacheKey, "Medium");
+      return "Medium";
     }
 
     // Use OpenAI to classify difficulty
@@ -89,7 +75,7 @@ const classifyDifficulty = async (title, body, labels = []) => {
         {
           role: "system",
           content:
-            "Classify GitHub issues for beginner developers into Easy, Medium, or Challenging.",
+            "Classify GitHub issues into Easy, Medium, or Challenging. Use the issue title, body, and labels.",
         },
         {
           role: "user",
@@ -100,18 +86,42 @@ const classifyDifficulty = async (title, body, labels = []) => {
       temperature: 0.5,
     });
 
-    // Extract difficulty from AI response
-    const difficulty =
-      aiResponse.choices[0]?.message?.content?.trim() || "Medium";
+    let difficulty =
+      aiResponse.choices[0]?.message?.content?.trim().toLowerCase() || "medium";
+
+    // Handle unclear classifications
+    if (
+      difficulty.includes("lacks sufficient information") ||
+      difficulty.includes("unknown")
+    ) {
+      console.warn(
+        `Unclear difficulty for issue "${title}". Defaulting to Medium.`
+      );
+      difficulty = "Medium";
+    }
+
+    // Cache the result
+    difficultyCache.set(cacheKey, difficulty);
 
     return difficulty;
   } catch (error) {
     console.error("Error classifying difficulty:", error.message);
-    // Default to "Medium" if classification fails
-    return "Medium";
+    return "Medium"; // Default to Medium if classification fails
   }
 };
+
+/**
+ * Generate a summary for a GitHub issue using OpenAI
+ * @param {String} title - Issue title
+ * @param {String} body - Issue body
+ * @returns {String} - Summary of the issue
+ */
 const generateSummary = async (title, body) => {
+  const cacheKey = `summary_${title}_${body}`;
+  if (summaryCache.has(cacheKey)) {
+    return summaryCache.get(cacheKey); // Return cached summary
+  }
+
   try {
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-3.5-turbo", // Switch to 3.5 for cost-efficiency
@@ -131,12 +141,20 @@ const generateSummary = async (title, body) => {
     });
 
     const summary = aiResponse.choices[0]?.message?.content?.trim();
-    return summary || "Summary generation failed.";
+    summaryCache.set(cacheKey, summary || "Summary unavailable."); // Cache the result
+    return summary || "Summary unavailable.";
   } catch (error) {
     console.error("Error generating summary:", error.message);
     return "Summary unavailable.";
   }
 };
+
+/**
+ * Generate debugging tips for a GitHub issue using OpenAI
+ * @param {String} title - Issue title
+ * @param {String} body - Issue body
+ * @returns {String} - Debugging tips
+ */
 const generateDebuggingTips = async (title, body) => {
   try {
     const aiResponse = await openai.chat.completions.create({

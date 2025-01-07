@@ -11,13 +11,41 @@ function Explore() {
   const { savedIssues, addIssue, removeIssue } = useContext(SavedIssuesContext);
 
   const [issues, setIssues] = useState([]); // Initially no issues loaded
-  const [hasMore, setHasMore] = useState(true); // For infinite scrolling (future-proofing)
+  const [hasMore, setHasMore] = useState(true); // For infinite scrolling
   const [difficulty, setDifficulty] = useState("Easy"); // For difficulty filters
   const [currentPage, setCurrentPage] = useState(1); // For pagination
+  const [loadingMessage, setLoadingMessage] = useState(""); // Temporary loading message
+  const [isLoading, setIsLoading] = useState(false); // Loading state
 
-  // Fetch and cache preferences
+  const loadingMessages = [
+    "Fetching issues from GitHub...",
+    "Analyzing issues with AI...",
+    "Creating summaries for the issues...",
+    "Classifying issue difficulties...",
+    "Almost done...",
+  ];
+
+  useEffect(() => {
+    let messageIndex = 0;
+    let messageInterval;
+
+    if (isLoading) {
+      // Start cycling through messages when loading starts
+      setLoadingMessage(loadingMessages[messageIndex]);
+      messageInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % loadingMessages.length;
+        setLoadingMessage(loadingMessages[messageIndex]);
+      }, 2000); // Change message every 2 seconds
+    }
+
+    return () => {
+      clearInterval(messageInterval); // Clear interval when loading ends
+    };
+  }, [isLoading]);
+
   const fetchAndCachePreferences = async () => {
     try {
+      setLoadingMessage("Fetching your preferences...");
       const { data } = await getPreferences();
       localStorage.setItem(
         "preferredLanguages",
@@ -34,56 +62,48 @@ function Explore() {
     }
   };
 
-  // Fetch Issues from the backend
-  const fetchIssues = async () => {
+  const fetchIssues = async ({ isInitialFetch = true } = {}) => {
     try {
-      console.log("Fetching issues with difficulty:", difficulty); // Debugging log
-      const preferences = await fetchAndCachePreferences();
+      setIsLoading(true);
+
+      const preferences = isInitialFetch
+        ? await fetchAndCachePreferences()
+        : JSON.parse(localStorage.getItem("preferences")) || {};
+
       const { languages, categories } = preferences || {};
       const difficultyFilter = difficulty === "All" ? "" : difficulty;
+      const nextPage = isInitialFetch ? 1 : currentPage + 1;
 
       const response = await axiosInstance.get(
         `/issues?preferredLanguages=${
           languages?.join(",") || ""
         }&preferredCategories=${
           categories?.join(",") || ""
-        }&difficulty=${difficultyFilter}&page=${currentPage}&limit=10`
+        }&difficulty=${difficultyFilter}&page=${nextPage}&limit=10`
       );
 
-      setIssues(response.data);
-      setCurrentPage(1); // Reset to the first page
-    } catch (error) {
-      console.error("Failed to load issues:", error.message);
-    }
-  };
-
-  const fetchMoreIssues = async () => {
-    if (!hasMore) return; // Do not fetch if no more data to load
-
-    try {
-      const preferences = JSON.parse(localStorage.getItem("preferences")) || {};
-      const response = await axiosInstance.get(
-        `/issues?preferredLanguages=${
-          preferences.languages?.join(",") || ""
-        }&preferredCategories=${
-          preferences.categories?.join(",") || ""
-        }&difficulty=${difficulty}&page=${currentPage + 1}&limit=10`
-      );
-
-      if (response.data.length === 0) {
-        setHasMore(false); // No more data to load
+      if (isInitialFetch) {
+        setIssues(response.data);
+        setCurrentPage(1);
+        setHasMore(response.data.length > 0);
       } else {
-        setIssues((prevIssues) => [...prevIssues, ...response.data]); // Append new data
-        setCurrentPage((prevPage) => prevPage + 1); // Increment page
+        if (response.data.length === 0) {
+          setHasMore(false);
+        } else {
+          setIssues((prevIssues) => [...prevIssues, ...response.data]);
+          setCurrentPage(nextPage);
+        }
       }
     } catch (error) {
-      console.error("Failed to fetch more issues:", error.message);
+      console.error("Failed to fetch issues:", error.message);
+    } finally {
+      setIsLoading(false); // Stop loading when done
+      setLoadingMessage(""); // Clear the message
     }
   };
 
-  // UseEffect to fetch issues on component mount
   useEffect(() => {
-    fetchIssues();
+    fetchIssues({ isInitialFetch: true });
   }, [difficulty]);
 
   return (
@@ -104,18 +124,24 @@ function Explore() {
             onChange={(e) => setDifficulty(e.target.value)}
           >
             <option value="">All</option>
-            <option value="Easy">Good First Issues</option>{" "}
-            {/* Change label to be user-friendly */}
+            <option value="Easy">Good First Issues</option>
             <option value="Medium">Medium</option>
             <option value="Challenging">Challenging</option>
           </select>
         </div>
       </div>
 
+      {/* Loading Message */}
+      {isLoading && (
+        <div className="text-center text-gray-700 dark:text-gray-300 my-4">
+          <p>{loadingMessage}</p>
+        </div>
+      )}
+
       <InfiniteScroll
         dataLength={issues.length}
         hasMore={hasMore}
-        next={fetchMoreIssues}
+        next={() => fetchIssues({ isInitialFetch: false })}
         loader={<SkeletonLoader count={2} />}
         endMessage={
           <p className="text-center mt-4 text-gray-600 dark:text-gray-400">
