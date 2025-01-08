@@ -2,7 +2,7 @@ import React from "react";
 import { Card, Tag, Button } from "antd";
 import { Link } from "react-router-dom";
 
-function IssueCard({ issue, onSave, isSaved }) {
+function IssueCard({ issue, onSave, isSaved, onRemove }) {
   const {
     title,
     repository,
@@ -13,12 +13,13 @@ function IssueCard({ issue, onSave, isSaved }) {
     summary,
     difficulty,
   } = issue;
+  if (!issue || !issue.title || !issue.url) return null; // Skip rendering invalid issues
 
   // Map difficulty to color
   const difficultyColors = {
-    Easy: "green",
-    Medium: "gold",
-    Challenging: "red",
+    easy: "green",
+    medium: "gold",
+    challenging: "red",
   };
 
   // Generate tags for labels
@@ -54,21 +55,23 @@ function IssueCard({ issue, onSave, isSaved }) {
           <span className="font-semibold">Labels:</span> {renderLabels()}
         </div>
         <div>
-          <span className="font-semibold">Stars:</span> {stars}
+          <span className="font-semibold">Stars:</span> {stars || "N/A"}
         </div>
         <div>
-          <span className="font-semibold">Forks:</span> {forks}
+          <span className="font-semibold">Forks:</span> {forks || "N/A"}
         </div>
         <div>
           <span className="font-semibold">Difficulty:</span>{" "}
-          <Tag color={difficultyColors[difficulty]}>{difficulty}</Tag>
+          <Tag color={difficultyColors[difficulty.toLowerCase()] || "gray"}>
+            {difficulty}
+          </Tag>
         </div>
       </div>
 
       {/* Summary Section */}
       <div className="text-sm mt-4 p-4 bg-gray-50 border-l-4 border-blue-500 rounded-md shadow-sm">
         <span className="font-semibold block mb-2">Summary:</span>
-        <p className="text-gray-700">{summary || "N/A"}</p>
+        <p className="text-gray-700">{summary || "Summary unavailable"}</p>
         <p>{issue.repository}</p>
         <h3 className="mt-4">
           <Link
@@ -99,7 +102,7 @@ function IssueCard({ issue, onSave, isSaved }) {
       {/* Save Button */}
       <Button
         type="primary"
-        onClick={onSave}
+        onClick={isSaved ? onRemove : onSave}
         className="mt-4 w-full"
         style={{
           backgroundColor: isSaved ? "#52c41a" : "#1890ff",
@@ -107,7 +110,7 @@ function IssueCard({ issue, onSave, isSaved }) {
         }}
         size="large"
       >
-        {isSaved ? "Saved" : "Save Issue"}
+        {isSaved ? "Remove Issue" : "Save Issue"}
       </Button>
     </Card>
   );

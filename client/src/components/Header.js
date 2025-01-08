@@ -1,70 +1,48 @@
-import React, { useEffect, useState } from "react";
-import { Button } from "antd";
-import { Link } from "react-router-dom";
-import axiosInstance from "../api"; // For logout functionality
+import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import "./Header.css"; // Custom styles for the Header component
+import { logoutUser } from "../api/user";
+import { useAuth } from "../context/AuthContext";
 
-function Header() {
-  const [username, setUsername] = useState(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await axiosInstance.get("/api/user"); // Fetch user data
-        setUsername(response.data.username);
-      } catch (error) {
-        console.log("User not logged in");
-      }
-    };
-
-    fetchUser();
-  }, []);
+const Header = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.post("/api/logout");
-      window.location.reload();
+      await logoutUser();
+      logout(); // Update the auth state
+      navigate("/"); // Redirect to the home or login page
     } catch (error) {
-      console.error("Logout failed", error);
+      console.error("Logout failed:", error);
     }
   };
 
   return (
-    <header
-      className="bg-blue-900 text-white shadow-md py-4 px-6"
-      style={{
-        backgroundColor: "#004080",
-      }}
-    >
-      <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold">
-          Open Source Buddy
-        </Link>
-        <nav>
-          {username ? (
-            <div className="flex items-center space-x-4">
-              <span>Welcome, {username}!</span>
-              <Button type="default" danger onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
-          ) : (
-            <Link to="/auth/github">
-              <Button
-                style={{
-                  backgroundColor: "#007BFF",
-                  borderColor: "#007BFF",
-                  color: "#FFF",
-                }}
-                type="primary"
-              >
-                Login with GitHub
-              </Button>
-            </Link>
-          )}
-        </nav>
+    <header className="app-header">
+      <div className="app-header__logo">
+        <h1>OpenSourceBuddy</h1>
       </div>
+      <nav className="app-header__nav">
+        <NavLink to="/dashboard" className="nav-link" activeClassName="active">
+          Dashboard
+        </NavLink>
+        <NavLink to="/explore" className="nav-link" activeClassName="active">
+          Explore
+        </NavLink>
+        <NavLink
+          to="/how-to-contribute"
+          className="nav-link"
+          activeClassName="active"
+        >
+          How to Contribute
+        </NavLink>
+      </nav>
+      <button className="app-header__logout-btn subtle" onClick={handleLogout}>
+        Logout
+      </button>
     </header>
   );
-}
+};
 
 export default Header;

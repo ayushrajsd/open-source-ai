@@ -4,6 +4,20 @@ import { getPreferences, savePreferences } from "../api/preferences";
 
 const { Option } = Select;
 
+// List of common languages for beginners
+const COMMON_LANGUAGES = [
+  "JavaScript",
+  "Python",
+  "Java",
+  "C++",
+  "C#",
+  "Ruby",
+  "PHP",
+  "Swift",
+  "Kotlin",
+  "Go",
+];
+
 function Preferences() {
   const [preferredLanguages, setPreferredLanguages] = useState([]);
   const [preferredCategories, setPreferredCategories] = useState([]);
@@ -25,11 +39,8 @@ function Preferences() {
 
   const handleSavePreferences = async () => {
     try {
-      // Flatten the payload to match backend expectations
-      const response = await savePreferences(
-        preferredLanguages,
-        preferredCategories
-      );
+      // Save preferences to the backend
+      await savePreferences(preferredLanguages, preferredCategories);
       message.success("Preferences updated successfully!");
     } catch (error) {
       message.error("Failed to save preferences. Please try again.");
@@ -50,13 +61,12 @@ function Preferences() {
           <Select
             mode="multiple"
             placeholder="Choose languages you love to work with"
-            loading={!preferredLanguages.length}
             value={preferredLanguages}
             onChange={(values) => setPreferredLanguages(values)}
             className="w-full"
             style={{ minWidth: "200px" }}
           >
-            {["JavaScript", "Python", "Java", "C++"].map((lang) => (
+            {COMMON_LANGUAGES.map((lang) => (
               <Option key={lang} value={lang}>
                 {lang}
               </Option>
@@ -86,12 +96,7 @@ function Preferences() {
         </div>
 
         {/* Save Button */}
-        <Button
-          type="primary"
-          onClick={handleSavePreferences}
-          className="mt-4"
-          loading={false} // Add a loading state if required
-        >
+        <Button type="primary" onClick={handleSavePreferences} className="mt-4">
           Save Preferences
         </Button>
       </div>

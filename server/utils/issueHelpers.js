@@ -97,13 +97,13 @@ const classifyDifficulty = async (title, body, labels = []) => {
       console.warn(
         `Unclear difficulty for issue "${title}". Defaulting to Medium.`
       );
-      difficulty = "Medium";
+      difficulty = "medium";
     }
 
     // Cache the result
     difficultyCache.set(cacheKey, difficulty);
 
-    return difficulty;
+    return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
   } catch (error) {
     console.error("Error classifying difficulty:", error.message);
     return "Medium"; // Default to Medium if classification fails

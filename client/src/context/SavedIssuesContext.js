@@ -4,9 +4,9 @@ const SavedIssuesContext = createContext();
 
 export const SavedIssuesProvider = ({ children }) => {
   const [savedIssues, setSavedIssues] = useState(() => {
-    // Load initial state from localStorage
     const saved = JSON.parse(localStorage.getItem("savedIssues")) || [];
-    return saved;
+    // Flatten if nested arrays exist
+    return Array.isArray(saved[0]) ? saved.flat() : saved;
   });
 
   // Update localStorage whenever savedIssues changes
@@ -16,6 +16,12 @@ export const SavedIssuesProvider = ({ children }) => {
   }, [savedIssues]);
 
   const addIssue = (issue) => {
+    if (Array.isArray(issue)) {
+      console.error(
+        "addIssue received an array, expected an individual issue."
+      );
+      return;
+    }
     if (!savedIssues.some((saved) => saved.id === issue.id)) {
       setSavedIssues([...savedIssues, issue]);
     }

@@ -1,43 +1,3 @@
-// import React from "react";
-// import Header from "../components/Header";
-// import FeatureHighlights from "../components/FeatureHighlights";
-// import CallToAction from "../components/CallToAction";
-
-// function MainPage() {
-//   return (
-//     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200">
-//       {/* Header Section */}
-//       <Header />
-
-//       {/* Hero Section */}
-//       <section className="text-center py-12 bg-blue-500 text-white">
-//         <div className="container mx-auto px-6">
-//           <h1 className="text-4xl font-bold mb-4">
-//             Welcome to Open Source Buddy!
-//           </h1>
-//           <p className="text-lg mb-8">
-//             Simplifying open-source contributions, one step at a time.
-//           </p>
-//           <a
-//             href="/explore"
-//             className="bg-white text-blue-500 px-6 py-3 rounded-md shadow hover:bg-gray-200 transition"
-//           >
-//             Explore Issues
-//           </a>
-//         </div>
-//       </section>
-
-//       {/* Feature Highlights */}
-//       <FeatureHighlights />
-
-//       {/* Call to Action */}
-//       <CallToAction />
-//     </div>
-//   );
-// }
-
-// export default MainPage;
-
 import React from "react";
 import { Button } from "antd";
 import { Link } from "react-router-dom";
@@ -67,7 +27,7 @@ function MainPage() {
               and contribute confidently.
             </p>
             <div className="mt-8">
-              <Link to="/explore">
+              <Link>
                 <Button
                   type="primary"
                   size="large"
@@ -77,6 +37,7 @@ function MainPage() {
                     backgroundColor: "#4f46e5",
                     borderColor: "#4f46e5",
                   }}
+                  onClick={handleLogin}
                 >
                   Get Started
                 </Button>

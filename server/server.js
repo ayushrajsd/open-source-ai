@@ -76,7 +76,7 @@ connectDB();
 // Routes
 app.use("/api/preferences", preferencesRoutes);
 app.use("/api/saved-issues", savedIssuesRoutes);
-app.use("/api", profileRoutes);
+app.use("/api/user", profileRoutes);
 app.use("/api/issues", issuesRoutes);
 app.use("/api/auth", authRoutes);
 
@@ -127,8 +127,16 @@ app.get(
 
 // Logout Route
 app.get("/logout", (req, res) => {
+  // Clear the JWT cookie
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+  });
+
+  // Call logout to terminate the session
   req.logout(() => {
-    res.json({ message: "Successfully logged out" });
+    res.status(200).json({ message: "Successfully logged out" });
   });
 });
 
