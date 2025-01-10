@@ -33,7 +33,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://your-production-url.com"
+        ? "https://open-source-ai.onrender.com"
         : "http://localhost:3000",
     credentials: true,
   })
@@ -69,6 +69,16 @@ app.use(
         upgradeInsecureRequests: [],
       },
     },
+    // Add other default helmet protections
+    dnsPrefetchControl: true,
+    frameguard: true,
+    hidePoweredBy: true,
+    hsts: true,
+    ieNoOpen: true,
+    noSniff: true,
+    permittedCrossDomainPolicies: true,
+    referrerPolicy: { policy: "no-referrer" },
+    xssFilter: true,
   })
 );
 
@@ -80,7 +90,7 @@ app.use(
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       collectionName: "sessions",
-    }),
+    }).on("connected", () => console.log("Session store connected")),
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       secure: process.env.NODE_ENV === "production",
@@ -123,11 +133,13 @@ app.use("/api/auth", limiter, authRoutes);
 // OAuth Routes
 app.get(
   "/auth/github",
+  limiter,
   passport.authenticate("github", { scope: ["user:email"], prompt: "consent" })
 );
 
 app.get(
   "/auth/github/callback",
+  limiter,
   passport.authenticate("github", { failureRedirect: "/" }),
   (req, res) => {
     const { accessToken } = req.user;
@@ -146,7 +158,7 @@ app.get(
     });
     res.redirect(
       process.env.NODE_ENV === "production"
-        ? "https://your-production-url.com/dashboard"
+        ? "https://open-source-ai.onrender.com/dashboard"
         : "http://localhost:3000/dashboard"
     );
   }
@@ -163,13 +175,13 @@ app.get("/logout", (req, res) => {
   });
 });
 
+// Error Handler
+app.use(errorHandler);
+
 // Fallback Route
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/build", "index.html"));
 });
-
-// Error Handler
-app.use(errorHandler);
 
 // Start Server
 const PORT = process.env.PORT || 8000;
@@ -179,6 +191,7 @@ const server = app.listen(PORT, () => {
 
 process.on("SIGTERM", () => {
   console.log("SIGTERM signal received. Closing HTTP server...");
+  console.log(`Environment: ${process.env.NODE_ENV}`);
   server.close(() => {
     console.log("HTTP server closed.");
     process.exit(0);

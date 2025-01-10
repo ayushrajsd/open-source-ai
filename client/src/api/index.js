@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api", // Your backend URL
+  baseURL:
+    process.env.NODE_ENV === "production"
+      ? "https://open-source-ai.onrender.com/api" // Production backend URL
+      : "http://localhost:8000/api", // Development backend URL
   headers: {
     "Content-Type": "application/json",
   },

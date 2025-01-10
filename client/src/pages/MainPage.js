@@ -5,7 +5,7 @@ import { ArrowRightOutlined, CheckCircleOutlined } from "@ant-design/icons";
 
 function MainPage() {
   const handleLogin = () => {
-    window.location.href = "http://localhost:8000/auth/github"; // Replace with your backend URL
+    window.location.href = "https://open-source-ai.onrender.com/auth/github"; // Replace with your backend URL
   };
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">

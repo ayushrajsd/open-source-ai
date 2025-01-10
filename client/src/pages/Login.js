@@ -3,7 +3,7 @@ import React from "react";
 function Login() {
   const handleLogin = () => {
     // Redirect to the GitHub OAuth endpoint in your backend
-    window.location.href = "http://localhost:8000/auth/github"; // Replace with your backend URL
+    window.location.href = "https://open-source-ai.onrender.com/auth/github"; // Replace with your backend URL
   };
 
   return (
