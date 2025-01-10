@@ -12,6 +12,8 @@ const connectDB = require("./config/db");
 const passport = require("./config/passport");
 const logger = require("./config/logger");
 const jwt = require("jsonwebtoken");
+const compression = require("compression");
+const path = require("path");
 
 const preferencesRoutes = require("./routes/preferences");
 const savedIssuesRoutes = require("./routes/savedIssues");
@@ -20,24 +22,56 @@ const issuesRoutes = require("./routes/issues");
 const errorHandler = require("./middleware/errorHandler");
 const authRoutes = require("./routes/auth");
 
-// Load environment variables
-
 // Initialize app
 const app = express();
 
 // Middleware
-app.use(express.json()); // Parse JSON bodies
-app.use(helmet()); // Security headers
-app.use(morgan("dev")); // Log HTTP requests
+app.use(express.json());
+app.use(compression());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:3000", // Frontend URL
-    credentials: true, // Allow cookies to be sent
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://your-production-url.com"
+        : "http://localhost:3000",
+    credentials: true,
   })
 );
 
-// Session Middleware
+if (process.env.NODE_ENV !== "production") {
+  app.use(morgan("dev"));
+}
+
+app.use(
+  morgan("combined", {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  })
+);
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "https://apis.google.com",
+          "https://cdn.jsdelivr.net",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://api.github.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+  })
+);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -50,35 +84,27 @@ app.use(
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "Strict",
     },
   })
 );
-app.use(errorHandler);
-app.use(
-  morgan("combined", {
-    stream: {
-      write: (message) => logger.info(message.trim()),
-    },
-  })
-);
-app.use(
-  helmet({
-    contentSecurityPolicy: false, // Adjust CSP as needed
-  })
-);
-// Initialize Passport
+
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(
+  express.static(path.join(__dirname, "../client/build"), {
+    setHeaders: (res, path) => {
+      if (path.endsWith(".html")) {
+        res.setHeader("Cache-Control", "no-cache");
+      }
+    },
+  })
+);
+
 // MongoDB Connection
 connectDB();
-
-// Routes
-app.use("/api/preferences", preferencesRoutes);
-app.use("/api/saved-issues", savedIssuesRoutes);
-app.use("/api/user", profileRoutes);
-app.use("/api/issues", issuesRoutes);
-app.use("/api/auth", authRoutes);
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -86,7 +112,13 @@ const limiter = rateLimit({
   max: 100, // Limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
 });
-app.use(limiter);
+
+// Routes
+app.use("/api/preferences", preferencesRoutes);
+app.use("/api/saved-issues", savedIssuesRoutes);
+app.use("/api/user", profileRoutes);
+app.use("/api/issues", limiter, issuesRoutes);
+app.use("/api/auth", limiter, authRoutes);
 
 // OAuth Routes
 app.get(
@@ -98,50 +130,57 @@ app.get(
   "/auth/github/callback",
   passport.authenticate("github", { failureRedirect: "/" }),
   (req, res) => {
-    // Access token is available in req.user.accessToken
     const { accessToken } = req.user;
-
     if (!accessToken) {
       return res.status(500).json({ message: "Access token missing!" });
     }
-
-    // Save the accessToken in the session
     req.session.accessToken = accessToken;
-
-    // Generate JWT token for secure frontend usage
     const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "7d",
     });
-
-    // Send the JWT token as HttpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
-      maxAge: 3600000, // 1 hour
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
-    res.redirect("http://localhost:3000/dashboard");
+    res.redirect(
+      process.env.NODE_ENV === "production"
+        ? "https://your-production-url.com/dashboard"
+        : "http://localhost:3000/dashboard"
+    );
   }
 );
 
-// Logout Route
 app.get("/logout", (req, res) => {
-  // Clear the JWT cookie
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "Strict",
   });
-
-  // Call logout to terminate the session
   req.logout(() => {
     res.status(200).json({ message: "Successfully logged out" });
   });
 });
 
+// Fallback Route
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/build", "index.html"));
+});
+
+// Error Handler
+app.use(errorHandler);
+
 // Start Server
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+process.on("SIGTERM", () => {
+  console.log("SIGTERM signal received. Closing HTTP server...");
+  server.close(() => {
+    console.log("HTTP server closed.");
+    process.exit(0);
+  });
 });
