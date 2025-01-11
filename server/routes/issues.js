@@ -171,7 +171,7 @@ router.get("/", authenticateUser, async (req, res) => {
 
 router.get("/:issueNumber", authenticateUser, async (req, res) => {
   const { issueNumber } = req.params;
-  const accessToken = req.session.accessToken;
+  const accessToken = req.cookies.github_access_token;
 
   try {
     if (!accessToken) {

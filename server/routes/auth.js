@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const router = express.Router();
 
-router.post("/refresh-token", (req, res) => {
+router.post("/refresh-token", authenticateUser, (req, res) => {
   // Check if user is logged in
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
