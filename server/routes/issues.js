@@ -138,7 +138,7 @@ router.get("/", authenticateUser, async (req, res) => {
     } = req.query;
 
     console.log("Difficulty filter received:", difficulty);
-    const accessToken = req.session.accessToken;
+    const accessToken = req.cookies.github_access_token;
 
     if (!accessToken) {
       return res.status(401).json({ message: "Unauthorized: No GitHub token" });
