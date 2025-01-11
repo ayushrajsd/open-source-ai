@@ -23,8 +23,8 @@ function MainPage() {
               Simplify Your Open Source Journey with AI
             </h1>
             <p className="mt-4 text-lg text-gray-200">
-              Explore beginner-friendly issues, get personalized suggestions,
-              and contribute confidently.
+              Explore beginner-friendly issues, get debugging suggestions, and
+              contribute confidently.
             </p>
             <div className="mt-8">
               <Link>
