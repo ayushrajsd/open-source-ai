@@ -15,16 +15,12 @@ const difficultyCache = new Map(); // Cache for difficulty classifications
  * @returns {Array} - Ranked issues
  */
 const rankIssues = (issues) => {
-  console.log("Raw issues count:", issues.length);
-
   // Relax thresholds to ensure more issues pass through
   let filteredIssues = issues.filter(
     (issue) =>
       issue.stars >= 3 && // Lowered minimum stars
       issue.forks >= 0 // Allow repositories with no forks
   );
-
-  console.log("Filtered issues count:", filteredIssues.length);
 
   // Fallback: Ensure at least 5 issues are returned
   if (filteredIssues.length < 5) {
@@ -33,8 +29,6 @@ const rankIssues = (issues) => {
     );
     filteredIssues = [...filteredIssues, ...additionalIssues].slice(0, 5); // Ensure a minimum of 5 issues
   }
-
-  console.log("Ranked issues count:", filteredIssues.length);
 
   return filteredIssues;
 };
@@ -54,9 +48,6 @@ const classifyDifficulty = async (title, body, labels = []) => {
 
   try {
     const labelNames = labels.map((label) => label.name?.toLowerCase() || "");
-
-    // Debugging log
-    console.log("Classifying difficulty for issue:", { title, labels });
 
     // Prioritize labels
     if (labelNames.includes("good first issue")) {

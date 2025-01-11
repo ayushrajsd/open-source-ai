@@ -6,11 +6,9 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Default: not logged in
 
   const login = () => {
-    console.log("logged in", isAuthenticated);
     setIsAuthenticated(true);
   };
   const logout = () => {
-    console.log("logged out", isAuthenticated);
     setIsAuthenticated(false);
   };
 

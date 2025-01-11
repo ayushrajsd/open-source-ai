@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "lint": "eslint . --ext .js,.jsx",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
     "express-validator": "^7.2.0",
@@ -34,7 +37,10 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.3",
     "morgan": "^1.10.0",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "prettier": "^3.4.2"
   }
 }

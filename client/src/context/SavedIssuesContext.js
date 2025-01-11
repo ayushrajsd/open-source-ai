@@ -11,7 +11,6 @@ export const SavedIssuesProvider = ({ children }) => {
 
   // Update localStorage whenever savedIssues changes
   useEffect(() => {
-    console.log("savedIssues changed:", savedIssues);
     localStorage.setItem("savedIssues", JSON.stringify(savedIssues));
   }, [savedIssues]);
 
@@ -28,7 +27,6 @@ export const SavedIssuesProvider = ({ children }) => {
   };
 
   const removeIssue = (id) => {
-    console.log("Removing issue with id:", id);
     setSavedIssues(savedIssues.filter((issue) => issue.id !== id));
   };
 

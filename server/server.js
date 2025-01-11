@@ -14,6 +14,7 @@ const logger = require("./config/logger");
 const jwt = require("jsonwebtoken");
 const compression = require("compression");
 const path = require("path");
+const mongoSanitize = require("express-mongo-sanitize");
 
 const preferencesRoutes = require("./routes/preferences");
 const savedIssuesRoutes = require("./routes/savedIssues");
@@ -27,9 +28,9 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+app.use(mongoSanitize()); // Protects against MongoDB operator injection attacks
 app.use(compression());
 app.use(cookieParser());
-console.log("process env", process.env.NODE_ENV);
 app.use(
   cors({
     origin:
@@ -103,16 +104,6 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
-
-app.use(
-  express.static(path.join(__dirname, "../client/build"), {
-    setHeaders: (res, path) => {
-      if (path.endsWith(".html")) {
-        res.setHeader("Cache-Control", "no-cache");
-      }
-    },
-  })
-);
 
 // MongoDB Connection
 connectDB();
@@ -192,13 +183,28 @@ app.get("/logout", (req, res) => {
   });
 });
 
+// Serve Static Files Only in Production
+if (process.env.NODE_ENV === "production") {
+  app.use(
+    express.static(path.join(__dirname, "../client/build"), {
+      setHeaders: (res, path) => {
+        if (path.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache");
+        }
+      },
+    })
+  );
+
+  // Fallback Route for React
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../client/build", "index.html"));
+  });
+} else {
+  console.log("Development mode: React app is served separately.");
+}
+
 // Error Handler
 app.use(errorHandler);
-
-// Fallback Route
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/build", "index.html"));
-});
 
 // Start Server
 const PORT = process.env.PORT || 8000;

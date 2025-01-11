@@ -12,9 +12,6 @@ passport.use(
       prompt: "consent",
     },
     async (accessToken, refreshToken, profile, done) => {
-      console.log("Access Token:", accessToken); // Log accessToken for debugging
-      console.log("GitHub Profile:", profile);
-
       try {
         const { id, username, profileUrl, photos, _json } = profile;
         const email = _json.email || profile.emails?.[0]?.value || null;

@@ -1,0 +1,7 @@
+# Ignore build folder
+
+build
+
+# Ignore node_modules (already ignored by default)
+
+node_modules

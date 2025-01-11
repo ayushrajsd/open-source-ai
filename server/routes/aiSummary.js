@@ -8,7 +8,7 @@ const openai = new OpenAI({
 });
 
 // POST /api/ai/summary - Generate a summary for an issue description
-router.post("/summary", async (req, res) => {
+router.post("/summary", async (req, res, next) => {
   const { description } = req.body;
 
   if (!description) {
@@ -27,7 +27,7 @@ router.post("/summary", async (req, res) => {
     res.json({ summary });
   } catch (error) {
     console.error("Error generating summary:", error.message);
-    res.status(500).json({ message: "Failed to generate summary" });
+    next(error);
   }
 });
 

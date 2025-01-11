@@ -98,9 +98,6 @@ const fetchIssuesFromGitHub = async ({
       query
     )}&sort=stars&order=desc&page=${page}&per_page=${limit}`;
 
-    console.log(`Fetching issues with query: ${query}`);
-    console.log(`GitHub API URL: ${url}`);
-
     try {
       const response = await axios.get(url, {
         headers: {
@@ -109,7 +106,6 @@ const fetchIssuesFromGitHub = async ({
       });
 
       issues = response.data.items || [];
-      console.log(`Fetched ${issues.length} issues from GitHub.`);
     } catch (error) {
       console.error("Error fetching issues from GitHub:", error.message);
       throw new Error("GitHub API fetch failed");
@@ -185,7 +181,6 @@ const fetchIssueDetails = async (repositoryUrl, issueNumber, accessToken) => {
 
   try {
     const url = `${repositoryUrl}/issues/${issueNumber}`;
-    console.log("Constructed issue URL:", url);
 
     const response = await axios.get(url, {
       headers: {

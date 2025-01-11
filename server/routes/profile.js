@@ -4,10 +4,9 @@ const authenticateUser = require("../middleware/authMiddleware");
 const axios = require("axios");
 
 // GET /api/profile - Fetch GitHub profile details and contributions
-router.get("/profile", authenticateUser, async (req, res) => {
+router.get("/profile", authenticateUser, async (req, res, next) => {
   try {
     // Access token saved during GitHub OAuth
-    console.log("req session", req.session);
     const accessToken = req.cookies.github_access_token;
 
     if (!accessToken) {
@@ -60,9 +59,7 @@ router.get("/profile", authenticateUser, async (req, res) => {
       "Error fetching GitHub profile or contributions:",
       error.message
     );
-    res
-      .status(500)
-      .json({ message: "Failed to fetch profile or contributions" });
+    next(error);
   }
 });
 
@@ -80,7 +77,6 @@ router.get("/logout", async (req, res) => {
 });
 
 router.get("/verify-auth", authenticateUser, (req, res) => {
-  console.log("verifying auth");
   res
     .status(200)
     .json({ message: "Authenticated", user: req.user, status: 200 });

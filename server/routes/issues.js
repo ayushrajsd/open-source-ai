@@ -47,7 +47,6 @@ const processIssues = async (issues, accessToken) => {
       try {
         const detection = langdetect.detectOne(content);
         detectedLanguage = detection?.lang || "en"; // Use detected language or fallback to English
-        console.log(`Detected language for "${title}": ${detectedLanguage}`);
       } catch (error) {
         console.warn(
           `Language detection failed for "${title}". Defaulting to English.`
@@ -127,7 +126,7 @@ const processIssues = async (issues, accessToken) => {
 };
 
 // GET /api/issues
-router.get("/", authenticateUser, async (req, res) => {
+router.get("/", authenticateUser, async (req, res, next) => {
   try {
     const {
       preferredLanguages,
@@ -137,7 +136,6 @@ router.get("/", authenticateUser, async (req, res) => {
       limit = 10,
     } = req.query;
 
-    console.log("Difficulty filter received:", difficulty);
     const accessToken = req.cookies.github_access_token;
 
     if (!accessToken) {
@@ -165,11 +163,11 @@ router.get("/", authenticateUser, async (req, res) => {
     res.json(rankedIssues);
   } catch (error) {
     console.error("Error processing issues:", error.message);
-    res.status(500).json({ message: "Failed to process issues." });
+    next(error);
   }
 });
 
-router.get("/:issueNumber", authenticateUser, async (req, res) => {
+router.get("/:issueNumber", authenticateUser, async (req, res, next) => {
   const { issueNumber } = req.params;
   const accessToken = req.cookies.github_access_token;
 
@@ -211,27 +209,31 @@ router.get("/:issueNumber", authenticateUser, async (req, res) => {
     res.json(processedIssues[0]);
   } catch (error) {
     console.error("Error fetching issue details:", error.message);
-    res.status(500).json({ message: "Failed to fetch issue details" });
+    next(error);
   }
 });
 
-router.get("/:issueNumber/debug-tips", authenticateUser, async (req, res) => {
-  const { issueNumber } = req.params;
-  const repository = req.query.repository;
-  const repositoryUrl = `${GITHUB_API_BASE_URL}/repos/${repository}`;
+router.get(
+  "/:issueNumber/debug-tips",
+  authenticateUser,
+  async (req, res, next) => {
+    const { issueNumber } = req.params;
+    const repository = req.query.repository;
+    const repositoryUrl = `${GITHUB_API_BASE_URL}/repos/${repository}`;
 
-  try {
-    const issue = await fetchIssueDetails(
-      repositoryUrl,
-      issueNumber,
-      req.cookies.github_access_token
-    );
-    const tips = await generateDebuggingTips(issue.title, issue.body);
-    res.json({ tips });
-  } catch (error) {
-    console.error("Error generating debugging tips:", error.message);
-    res.status(500).json({ message: "Failed to generate debugging tips" });
+    try {
+      const issue = await fetchIssueDetails(
+        repositoryUrl,
+        issueNumber,
+        req.cookies.github_access_token
+      );
+      const tips = await generateDebuggingTips(issue.title, issue.body);
+      res.json({ tips });
+    } catch (error) {
+      console.error("Error generating debugging tips:", error.message);
+      next(error);
+    }
   }
-});
+);
 
 module.exports = router;

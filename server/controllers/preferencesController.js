@@ -2,7 +2,7 @@ const UserPreference = require("../models/UserPreference");
 const { body, validationResult } = require("express-validator");
 
 // Save User Preferences
-exports.savePreferences = async (req, res) => {
+exports.savePreferences = async (req, res, next) => {
   try {
     const { preferredLanguages, preferredCategories } = req.body;
     const userId = req.user.id; // Extract user ID from JWT payload
@@ -19,12 +19,12 @@ exports.savePreferences = async (req, res) => {
     res.status(200).json({ success: true, data: preferences });
   } catch (error) {
     console.error("Error saving preferences:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(error);
   }
 };
 
 // Get User Preferences
-exports.getPreferences = async (req, res) => {
+exports.getPreferences = async (req, res, next) => {
   try {
     const userId = req.user.id; // Extract user ID from JWT payload
 
@@ -38,6 +38,6 @@ exports.getPreferences = async (req, res) => {
     res.status(200).json({ success: true, data: preferences });
   } catch (error) {
     console.error("Error fetching preferences:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(error);
   }
 };

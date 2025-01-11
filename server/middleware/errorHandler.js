@@ -1,15 +1,12 @@
 const errorHandler = (err, req, res, next) => {
-  if (process.env.NODE_ENV === "production") {
-    res.status(err.status || 500).json({
-      message: "Something went wrong. Please try again later.",
-    });
-  } else {
-    console.error(err.stack); // Debugging in development
-    res.status(err.status || 500).json({
-      message: err.message || "Internal Server Error",
-      stack: err.stack,
-    });
-  }
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode);
+
+  const isProduction = process.env.NODE_ENV === "production";
+  res.json({
+    message: isProduction ? "An unexpected error occurred" : err.message,
+    stack: isProduction ? null : err.stack,
+  });
 };
 
 module.exports = errorHandler;
