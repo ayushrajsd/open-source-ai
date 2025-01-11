@@ -32,23 +32,37 @@ Open Source AI is a beginner-friendly SaaS application that helps users make ope
 
 # Backend
 
+```bash
+
 cd server
 npm install
+```
 
 # Frontend
 
+```bash
 cd ../client
-npm install 3. **setup env variables** 4. Set Up GitHub OAuth to get the callback url, client id and client secret 5. Setup MongoDB Atlas to get the connection url 6. **Run the app**
+npm install
+```
+
+3. **setup env variables**
+4. Set Up GitHub OAuth to get the callback url, client id and client secret
+5. Setup MongoDB Atlas to get the connection url
+6. **Run the app**
 
 # Backend
 
+```bash
 cd server
 npm start
+```
 
 # Frontend
 
+```bash
 cd ../client
 npm start
+```
 
 7. Open the app in your browser at http://localhost:3000.
 8. **Licesnse**

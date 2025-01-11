@@ -15,7 +15,6 @@ exports.savePreferences = async (req, res, next) => {
       { languages: preferredLanguages, categories: preferredCategories },
       { new: true, upsert: true } // Update or insert if not found
     );
-    console.log("updated prefrerences", preferences);
     res.status(200).json({ success: true, data: preferences });
   } catch (error) {
     console.error("Error saving preferences:", error);
