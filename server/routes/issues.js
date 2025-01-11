@@ -224,7 +224,7 @@ router.get("/:issueNumber/debug-tips", authenticateUser, async (req, res) => {
     const issue = await fetchIssueDetails(
       repositoryUrl,
       issueNumber,
-      req.session.accessToken
+      req.cookies.github_access_token
     );
     const tips = await generateDebuggingTips(issue.title, issue.body);
     res.json({ tips });
