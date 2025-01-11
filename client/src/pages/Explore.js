@@ -145,7 +145,7 @@ function Explore() {
         loader={<SkeletonLoader count={2} />}
         endMessage={
           <p className="text-center mt-4 text-gray-600 dark:text-gray-400">
-            You've reached the end of the issues.
+            You have reached the end of the issues.
           </p>
         }
       >
