@@ -29,6 +29,7 @@ const app = express();
 app.use(express.json());
 app.use(compression());
 app.use(cookieParser());
+console.log("process env", process.env.NODE_ENV);
 app.use(
   cors({
     origin:
@@ -143,19 +144,35 @@ app.get(
   passport.authenticate("github", { failureRedirect: "/" }),
   (req, res) => {
     const { accessToken } = req.user;
+
     if (!accessToken) {
       return res.status(500).json({ message: "Access token missing!" });
     }
-    req.session.accessToken = accessToken;
-    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+
+    // Store accessToken in an HttpOnly cookie
+    res.cookie("github_access_token", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+
+    // Generate JWT for app authentication
+    const token = jwt.sign(
+      { id: req.user._id, username: req.user.username },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
     res.redirect(
       process.env.NODE_ENV === "production"
         ? "https://open-source-ai.onrender.com/dashboard"
