@@ -4,7 +4,7 @@ import SavedIssuesContext from "../context/SavedIssuesContext";
 import IssueCard from "../components/IssueCard";
 import Preferences from "../components/Preferences";
 import { useAuth } from "../context/AuthContext";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const { savedIssues, addIssue, removeIssue } = useContext(SavedIssuesContext);
@@ -17,6 +17,7 @@ function Dashboard() {
   const [filter, setFilter] = useState("");
   const [isLoading, setIsLoading] = useState(!profile);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const { login, logout } = useAuth();
   useEffect(() => {
@@ -29,15 +30,17 @@ function Dashboard() {
           login(); // Set auth state to true
         } else {
           logout();
+          navigate("/"); // Redirect to the login page if not authenticated
         }
       } catch (error) {
         console.error("Authentication verification failed:", error);
         logout(); // Log out if verification fails
+        navigate("/"); // Redirect to the login page
       }
     };
 
     checkAuth();
-  }, [login, logout]);
+  }, [login, logout, navigate]);
 
   // Fetch GitHub profile and contributions
   useEffect(() => {
@@ -214,8 +217,8 @@ function Dashboard() {
                     contribution.status === "Merged"
                       ? "text-green-500"
                       : contribution.status === "Pending"
-                      ? "text-yellow-500"
-                      : "text-red-500"
+                        ? "text-yellow-500"
+                        : "text-red-500"
                   }`}
                 >
                   Status: {contribution.status}
