@@ -20,27 +20,27 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const { login, logout } = useAuth();
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Call the verify-auth endpoint to check authentication
-        const response = await verifyAuth();
+  // useEffect(() => {
+  //   const checkAuth = async () => {
+  //     try {
+  //       // Call the verify-auth endpoint to check authentication
+  //       const response = await verifyAuth();
 
-        if (response.status === 200) {
-          login(); // Set auth state to true
-        } else {
-          logout();
-          navigate("/"); // Redirect to the login page if not authenticated
-        }
-      } catch (error) {
-        console.error("Authentication verification failed:", error);
-        logout(); // Log out if verification fails
-        navigate("/"); // Redirect to the login page
-      }
-    };
+  //       if (response.status === 200) {
+  //         login(); // Set auth state to true
+  //       } else {
+  //         logout();
+  //         navigate("/"); // Redirect to the login page if not authenticated
+  //       }
+  //     } catch (error) {
+  //       console.error("Authentication verification failed:", error);
+  //       logout(); // Log out if verification fails
+  //       navigate("/"); // Redirect to the login page
+  //     }
+  //   };
 
-    checkAuth();
-  }, [login, logout, navigate]);
+  //   checkAuth();
+  // }, [login, logout, navigate]);
 
   // Fetch GitHub profile and contributions
   useEffect(() => {

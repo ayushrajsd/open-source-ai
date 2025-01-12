@@ -27,14 +27,21 @@ const processQueue = (error, token = null) => {
 
 // Refresh token function
 const refreshToken = async () => {
+  const refreshToken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("refresh_token="))
+    ?.split("=")[1];
+
+  if (!refreshToken) {
+    console.warn("No refresh token available. Skipping refresh.");
+    throw new Error("No refresh token available");
+  }
+
   try {
     const response = await axiosInstance.post("/auth/refresh-token");
     const { token } = response.data;
 
-    // Save the new token in cookies or session
     document.cookie = `token=${token}; path=/; secure; samesite=strict`;
-
-    // Update Authorization header for all subsequent requests
     axiosInstance.defaults.headers["Authorization"] = `Bearer ${token}`;
 
     return token;
@@ -72,7 +79,6 @@ axiosInstance.interceptors.response.use(
       !originalRequest._retry
     ) {
       if (isRefreshing) {
-        // If a refresh request is already in progress, queue the request
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -96,7 +102,9 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         isRefreshing = false;
-        return Promise.reject(refreshError);
+
+        console.error("Token refresh failed:", refreshError);
+        return Promise.reject(error); // Propagate original error
       }
     }
 

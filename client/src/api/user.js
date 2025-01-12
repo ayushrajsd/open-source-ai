@@ -21,12 +21,17 @@ export const logoutUser = async () => {
 
 export const verifyAuth = async () => {
   try {
+    console.log("Sending verify-auth request...");
     const response = await axiosInstance.get("/user/verify-auth", {
-      withCredentials: true, // Send cookies with the request
+      withCredentials: true,
     });
+    console.log("Verify-auth response:", response);
     return response.data;
   } catch (error) {
-    console.error("Error verifying authentication:", error);
-    throw error;
+    console.error(
+      "Error in verify-auth request:",
+      error.response?.data || error.message
+    );
+    throw error; // Ensure the error is propagated to the calling function
   }
 };

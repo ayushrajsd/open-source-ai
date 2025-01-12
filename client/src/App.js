@@ -9,6 +9,7 @@ import MainPage from "./pages/MainPage";
 import IssueDetail from "./components/IssueDetail";
 import HowToContribute from "./pages/HowToContribute";
 import { useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -26,11 +27,15 @@ function App() {
       <main>
         <Routes>
           {/* <Route path="/" element={<Login />} /> */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/explore" element={<Explore />} />
           <Route path="/" element={<MainPage />} />
-          <Route path="/issues/:issueNumber" element={<IssueDetail />} />
           <Route path="/how-to-contribute" element={<HowToContribute />} />
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/issues/:issueNumber" element={<IssueDetail />} />
+            <Route path="/how-to-contribute" element={<HowToContribute />} />
+          </Route>
         </Routes>
       </main>
     </div>
