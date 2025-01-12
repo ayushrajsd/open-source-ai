@@ -21,11 +21,9 @@ export const logoutUser = async () => {
 
 export const verifyAuth = async () => {
   try {
-    console.log("Sending verify-auth request...");
     const response = await axiosInstance.get("/user/verify-auth", {
       withCredentials: true,
     });
-    console.log("Verify-auth response:", response);
     return response.data;
   } catch (error) {
     console.error(

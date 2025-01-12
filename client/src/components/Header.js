@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import "./Header.css"; // Custom styles for the Header component
+import "./Header.css";
 import { logoutUser } from "../api/user";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,8 +11,8 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await logoutUser();
-      logout(); // Update the auth state
-      navigate("/"); // Redirect to the home or login page
+      logout();
+      navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -23,6 +23,9 @@ const Header = () => {
       <div className="app-header__logo">
         <h1>OpenSourceBuddy</h1>
       </div>
+      <button className="app-header__menu-toggle" aria-label="Toggle menu">
+        ☰
+      </button>
       <nav className="app-header__nav">
         <NavLink to="/dashboard" className="nav-link" activeClassName="active">
           Dashboard
@@ -38,7 +41,7 @@ const Header = () => {
           How to Contribute
         </NavLink>
       </nav>
-      <button className="app-header__logout-btn subtle" onClick={handleLogout}>
+      <button className="app-header__logout-btn" onClick={handleLogout}>
         Logout
       </button>
     </header>
