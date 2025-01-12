@@ -10,9 +10,7 @@ const ProtectedRoute = () => {
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
-        console.log("Starting authentication check...");
         const response = await verifyAuth();
-        console.log("Authentication response:", response);
 
         if (response.status === 200) {
           login();
@@ -26,8 +24,6 @@ const ProtectedRoute = () => {
         setIsLoading(false); // Stop loading after the check
       }
     };
-
-    console.log("Sending request to verify-auth endpoint...");
     checkAuthentication();
   }, [login, logout]);
 

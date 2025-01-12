@@ -27,41 +27,22 @@ const processQueue = (error, token = null) => {
 
 // Refresh token function
 const refreshToken = async () => {
-  const refreshToken = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("refresh_token="))
-    ?.split("=")[1];
-
-  if (!refreshToken) {
-    console.warn("No refresh token available. Skipping refresh.");
-    throw new Error("No refresh token available");
-  }
-
   try {
     const response = await axiosInstance.post("/auth/refresh-token");
-    const { token } = response.data;
-
-    document.cookie = `token=${token}; path=/; secure; samesite=strict`;
-    axiosInstance.defaults.headers["Authorization"] = `Bearer ${token}`;
-
-    return token;
+    return response.data.token; // Server should set new HttpOnly cookies
   } catch (error) {
+    console.error(
+      "Error during token refresh:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
 
 // Axios request interceptor
 axiosInstance.interceptors.request.use(
-  async (config) => {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1];
-
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
-    }
-
+  (config) => {
+    // No token manipulation needed due to HttpOnly cookies
     return config;
   },
   (error) => Promise.reject(error)
@@ -69,23 +50,22 @@ axiosInstance.interceptors.request.use(
 
 // Axios response interceptor to handle expired tokens
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => response, // Pass through successful responses
   async (error) => {
     const originalRequest = error.config;
 
+    // Check if the request should trigger token refresh
     if (
       error.response &&
       error.response.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/verify-auth")
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
-            originalRequest.headers["Authorization"] = `Bearer ${token}`;
-            return axiosInstance(originalRequest);
-          })
+          .then(() => axiosInstance(originalRequest))
           .catch((err) => Promise.reject(err));
       }
 
@@ -93,22 +73,20 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const newToken = await refreshToken();
-        processQueue(null, newToken);
+        await refreshToken();
+        processQueue(null); // Resolve queued requests
         isRefreshing = false;
-
-        originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-        return axiosInstance(originalRequest);
+        return axiosInstance(originalRequest); // Retry the original request
       } catch (refreshError) {
-        processQueue(refreshError, null);
+        processQueue(refreshError); // Reject queued requests
         isRefreshing = false;
 
         console.error("Token refresh failed:", refreshError);
-        return Promise.reject(error); // Propagate original error
+        return Promise.reject(error); // Propagate original 401 error
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(error); // Pass through non-401 errors
   }
 );
 
