@@ -64,6 +64,8 @@ cd ../client
 npm start
 ```
 
+## Demo - [Open Source Buddy]([https://website-name.com](https://open-source-ai.onrender.com/))
+
 7. Open the app in your browser at http://localhost:3000.
 8. **Licesnse**
    This project is licensed under the MIT License.
