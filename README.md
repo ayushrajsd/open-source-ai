@@ -64,7 +64,7 @@ cd ../client
 npm start
 ```
 
-# Demo - [Open Source Buddy](https://open-source-ai.onrender.com/))
+# Demo - [Open Source Buddy](https://open-source-ai.onrender.com/){:target="_blank"}
 
 7. Open the app in your browser at http://localhost:3000.
 8. **Licesnse**
